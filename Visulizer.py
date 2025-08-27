@@ -18,8 +18,7 @@ st.title("🎫 Visualizador de Tabla_Principal")
 # ---------------------------
 # IMPORTANTE: Genera un link de descarga directa desde OneDrive
 # ejemplo: https://onedrive.live.com/download?cid=XXXXXXX&resid=XXXXXXX
-url = "https://yrfda-my.sharepoint.com/:x:/g/personal/.../EU5O1TEO_npMo59ye00akMsBwTb-Y4aOH3Y86LlvSrvbJg?download=1
-"
+url = "https://yrfda-my.sharepoint.com/:x:/g/personal/.../EU5O1TEO_npMo59ye00akMsBwTb-Y4aOH3Y86LlvSrvbJg?download=1"
 
 # ---------------------------
 # Cargar datos
@@ -52,4 +51,5 @@ except Exception as e:
     st.error(f"❌ No se pudo cargar la tabla: {e}")
 
     st.info("Verifica que el link de OneDrive sea correcto y que tengas permisos de lectura.")
+
 
