@@ -18,7 +18,7 @@ st.title("🎫 Visualizador de Tabla_Principal")
 # ---------------------------
 # IMPORTANTE: Genera un link de descarga directa desde OneDrive
 # ejemplo: https://onedrive.live.com/download?cid=XXXXXXX&resid=XXXXXXX
-url = "https://yrfda-my.sharepoint.com/:x:/g/personal/hector_hernandez_yrfda_onmicrosoft_com/EU5O1TEO_npMo59ye00akMsBwTb-Y4aOH3Y86LlvSrvbJg?e=NsDyiT"
+url = "https://yrfda-my.sharepoint.com/:x:/g/personal/hector_hernandez_yrfda_onmicrosoft_com/EU5O1TEO_npMo59ye00akMsBG__SgrW_xnf-8lwsM3Pt7A?e=S9feDy&nav=MTVfezAwMDAwMDAwLTAwMDEtMDAwMC0wMTAwLTAwMDAwMDAwMDAwMH0"
 
 # ---------------------------
 # Cargar datos
