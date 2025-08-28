@@ -5,7 +5,7 @@ from datetime import datetime
 st.set_page_config(page_title="Visualizador Tickets", page_icon="🎫", layout="wide")
 st.title("🎫 Visualizador de Tickets")
 
-# URL RAW del CSV en GitHub (ajusta con tu usuario y repo)
+# URL RAW del CSV en GitHub
 CSV_URL = "https://raw.githubusercontent.com/facility-coder/tickets-visualizer/main/data/tickets.csv"
 
 @st.cache_data(ttl=60)
@@ -13,7 +13,7 @@ def cargar_csv(url):
     df = pd.read_csv(url, dtype=str, encoding="utf-8")
     df.columns = [str(c).strip() for c in df.columns]
 
-    # 👉 Renombramos dinámicamente las columnas (solo las que nos interesan)
+    # 👉 Renombramos dinámicamente las primeras columnas
     mapping = {
         df.columns[0]:  "Ticket",
         df.columns[1]:  "Unidad de Negocio",
@@ -42,8 +42,8 @@ def cargar_csv(url):
     }
     df = df.rename(columns=mapping)
 
-    # 👉 Ocultamos la primera columna (Ticket)
-    df = df.iloc[:, 1:]
+    # 👉 Usamos Ticket como índice fijo
+    df = df.set_index("Ticket")
     return df
 
 try:
@@ -75,7 +75,7 @@ try:
     # ⬇️ Descargar CSV filtrado
     # -------------------------------
     st.download_button("⬇️ Descargar CSV filtrado",
-                       data=view.to_csv(index=False).encode("utf-8-sig"),
+                       data=view.reset_index().to_csv(index=False).encode("utf-8-sig"),
                        file_name="tickets_filtrados.csv",
                        mime="text/csv")
 
@@ -89,4 +89,3 @@ try:
 except Exception as e:
     st.error(f"❌ No se pudo cargar el CSV: {e}")
     st.info("Verifica que el archivo tickets.csv exista en GitHub.")
-
