@@ -11,7 +11,7 @@ CSV_URL = "https://raw.githubusercontent.com/facility-coder/tickets-visualizer/m
 @st.cache_data(ttl=60)
 def cargar_csv(url):
     # 👇 Saltamos las 3 primeras filas
-    df = pd.read_csv(url, dtype=str, encoding="utf-8", skiprows=3)
+    df = pd.read_csv(url, dtype=str, encoding="utf-8", skiprows=4)
     df.columns = [str(c).strip() for c in df.columns]
 
     # 👉 Renombramos dinámicamente las columnas
@@ -100,4 +100,5 @@ try:
 except Exception as e:
     st.error(f"❌ No se pudo cargar el CSV: {e}")
     st.info("Verifica que el archivo tickets.csv exista en GitHub.")
+
 
