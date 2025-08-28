@@ -15,30 +15,30 @@ def cargar_csv(url):
 
     # 👉 Renombramos dinámicamente las primeras columnas
     mapping = {
-        df.columns[0]:  "Ticket",
-        df.columns[1]:  "Unidad de Negocio",
-        df.columns[2]:  "Sociedad",
-        df.columns[3]:  "Área",
-        df.columns[4]:  "Fecha Solicitud",
-        df.columns[5]:  "Reporte",
-        df.columns[6]:  "Mes",
-        df.columns[7]:  "Prioridad",
-        df.columns[8]:  "Categoría",
-        df.columns[9]:  "Tipo",
-        df.columns[10]: "Solicitado Por",
-        df.columns[11]: "Tiempo Estimado",
-        df.columns[12]: "Fecha Inicio",
-        df.columns[13]: "Fecha Terminación",
-        df.columns[14]: "Mes Terminación",
-        df.columns[15]: "Ejecutado SLA",
-        df.columns[16]: "Tiempo Vs Solicitado",
-        df.columns[17]: "Días desde Solicitud",
-        df.columns[18]: "Estado",
-        df.columns[19]: "Ejecutor",
-        df.columns[20]: "Presupuesto",
-        df.columns[21]: "Materiales",
-        df.columns[22]: "Link de Soporte",
-        df.columns[23]: "Foto"
+        df.columns[1]:  "Ticket",
+        df.columns[2]:  "Unidad de Negocio",
+        df.columns[3]:  "Sociedad",
+        df.columns[4]:  "Área",
+        df.columns[5]:  "Fecha Solicitud",
+        df.columns[6]:  "Reporte",
+        df.columns[7]:  "Mes",
+        df.columns[8]:  "Prioridad",
+        df.columns[9]:  "Categoría",
+        df.columns[10]:  "Tipo",
+        df.columns[11]: "Solicitado Por",
+        df.columns[12]: "Tiempo Estimado",
+        df.columns[13]: "Fecha Inicio",
+        df.columns[14]: "Fecha Terminación",
+        df.columns[15]: "Mes Terminación",
+        df.columns[16]: "Ejecutado SLA",
+        df.columns[17]: "Tiempo Vs Solicitado",
+        df.columns[18]: "Días desde Solicitud",
+        df.columns[19]: "Estado",
+        df.columns[20]: "Ejecutor",
+        df.columns[21]: "Presupuesto",
+        df.columns[22]: "Materiales",
+        df.columns[23]: "Link de Soporte",
+        df.columns[24]: "Foto"
     }
     df = df.rename(columns=mapping)
 
@@ -89,3 +89,4 @@ try:
 except Exception as e:
     st.error(f"❌ No se pudo cargar el CSV: {e}")
     st.info("Verifica que el archivo tickets.csv exista en GitHub.")
+
