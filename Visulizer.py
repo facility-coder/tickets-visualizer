@@ -13,15 +13,34 @@ def cargar_csv(url):
     df = pd.read_csv(url, dtype=str, encoding="utf-8")
     df.columns = [str(c).strip() for c in df.columns]
 
-    # Renombramos las columnas (orden correcto desde la 0 hasta la 24)
-    df.columns = [
-        "Ticket", "Unidad de Negocio", "Sociedad", "Área", "Fecha Solicitud",
-        "Reporte", "Mes", "Prioridad", "Categoría", "Tipo",
-        "Solicitado Por", "Tiempo Estimado", "Fecha Inicio",
-        "Fecha Terminación", "Mes Terminación", "Ejecutado SLA",
-        "Tiempo Vs Solicitado", "Días desde Solicitud", "Estado",
-        "Ejecutor", "Presupuesto", "Materiales", "Link de Soporte", "Foto"
-    ]
+    # 👉 Renombramos dinámicamente las columnas (solo las que nos interesan)
+    mapping = {
+        df.columns[0]:  "Ticket",
+        df.columns[1]:  "Unidad de Negocio",
+        df.columns[2]:  "Sociedad",
+        df.columns[3]:  "Área",
+        df.columns[4]:  "Fecha Solicitud",
+        df.columns[5]:  "Reporte",
+        df.columns[6]:  "Mes",
+        df.columns[7]:  "Prioridad",
+        df.columns[8]:  "Categoría",
+        df.columns[9]:  "Tipo",
+        df.columns[10]: "Solicitado Por",
+        df.columns[11]: "Tiempo Estimado",
+        df.columns[12]: "Fecha Inicio",
+        df.columns[13]: "Fecha Terminación",
+        df.columns[14]: "Mes Terminación",
+        df.columns[15]: "Ejecutado SLA",
+        df.columns[16]: "Tiempo Vs Solicitado",
+        df.columns[17]: "Días desde Solicitud",
+        df.columns[18]: "Estado",
+        df.columns[19]: "Ejecutor",
+        df.columns[20]: "Presupuesto",
+        df.columns[21]: "Materiales",
+        df.columns[22]: "Link de Soporte",
+        df.columns[23]: "Foto"
+    }
+    df = df.rename(columns=mapping)
 
     # 👉 Ocultamos la primera columna (Ticket)
     df = df.iloc[:, 1:]
