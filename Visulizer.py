@@ -2,54 +2,52 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 
-# ---------------------------
-# Configuración de la página
-# ---------------------------
-st.set_page_config(
-    page_title="Visualizador de Tickets",
-    page_icon="🎫",
-    layout="wide"
-)
+st.set_page_config(page_title="Visualizador Tickets", page_icon="🎫", layout="wide")
+st.title("🎫 Visualizador de Tickets")
 
-st.title("🎫 Visualizador de Tabla_Principal")
+# URL RAW del CSV en GitHub (ajusta con tu usuario y repo)
+CSV_URL = "https://raw.githubusercontent.com/facility-coder/tickets-visualizer/main/data/tickets.csv"
 
-# ---------------------------
-# URL del Excel en OneDrive
-# ---------------------------
-# IMPORTANTE: Genera un link de descarga directa desde OneDrive
-# ejemplo: https://onedrive.live.com/download?cid=XXXXXXX&resid=XXXXXXX
-url = "https://yrfda-my.sharepoint.com/:x:/g/personal/.../EU5O1TEO_npMo59ye00akMsBwTb-Y4aOH3Y86LlvSrvbJg?download=1"
-
-# ---------------------------
-# Cargar datos
-# ---------------------------
-@st.cache_data(ttl=60)  # refresca cada 60 segundos
-def cargar_tabla(url, hoja="Tabla Principal (Correctivo)"):
-    return pd.read_excel(url, sheet_name=hoja, engine="openpyxl", dtype=str)
+@st.cache_data(ttl=60)
+def cargar_csv(url):
+    df = pd.read_csv(url, dtype=str, encoding="utf-8")
+    df.columns = [str(c).strip() for c in df.columns]
+    return df
 
 try:
-    df = cargar_tabla(url)
-    st.success(f"✅ Datos cargados correctamente ({len(df)} filas, {len(df.columns)} columnas)")
-
-    # Mostrar la tabla completa
+    df = cargar_csv(CSV_URL)
+    st.success(f"✅ Cargado: {len(df)} filas × {len(df.columns)} columnas")
     st.dataframe(df, use_container_width=True, height=600)
+    st.caption(f"Última actualización: {datetime.now():%Y-%m-%d %H:%M:%S}")
 
-    # Info de actualización
-    st.caption(f"Última actualización: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    # Búsqueda rápida
+    st.subheader("🔎 Buscar")
+    col = st.selectbox("Columna", ["(todas)"] + list(df.columns))
+    q = st.text_input("Texto contiene:", "")
+    view = df
+    if q:
+        if col == "(todas)":
+            mask = False
+            for c in df.columns:
+                mask = mask | df[c].astype(str).str.contains(q, case=False, na=False)
+            view = df[mask]
+        else:
+            view = df[df[col].astype(str).str.contains(q, case=False, na=False)]
+        st.info(f"Coincidencias: {len(view)}")
 
-    # Botón para refrescar manualmente
-    if st.button("🔄 Actualizar ahora"):
+    st.dataframe(view, use_container_width=True, height=400)
+
+    # Descargar CSV filtrado
+    st.download_button("⬇️ Descargar CSV filtrado",
+                       data=view.to_csv(index=False).encode("utf-8-sig"),
+                       file_name="tickets_filtrados.csv",
+                       mime="text/csv")
+
+    if st.button("🔄 Refrescar ahora"):
         st.cache_data.clear()
         st.rerun()
 
-    # Descargar CSV filtrado
-    st.subheader("⬇️ Descargar datos")
-    csv = df.to_csv(index=False).encode("utf-8-sig")
-    st.download_button("Descargar CSV", data=csv, file_name="tickets.csv", mime="text/csv")
-
 except Exception as e:
-    st.error(f"❌ No se pudo cargar la tabla: {e}")
-
-    st.info("Verifica que el link de OneDrive sea correcto y que tengas permisos de lectura.")
-
+    st.error(f"❌ No se pudo cargar el CSV: {e}")
+    st.info("Verifica que el archivo tickets.csv exista en GitHub.")
 
