@@ -9,76 +9,81 @@ st.title("🎫 Visualizador de Tickets")
 CSV_URL = "https://raw.githubusercontent.com/facility-coder/tickets-visualizer/main/data/tickets.csv"
 
 @st.cache_data(ttl=60)
-def cargar_csv(url):
-    # 👇 Saltamos las 3 primeras filas
-    df = pd.read_csv(url, dtype=str, encoding="utf-8", skiprows=3)
+def cargar_csv(url: str) -> pd.DataFrame:
+    # Saltamos las 3 primeras filas y evitamos romper por líneas defectuosas
+    df = pd.read_csv(url, dtype=str, encoding="utf-8", skiprows=3, on_bad_lines="skip")
+
+    # Quitar columnas completamente vacías (a veces Excel deja columnas extra)
+    df = df.dropna(axis=1, how="all")
+
+    # Limpiar encabezados
     df.columns = [str(c).strip() for c in df.columns]
 
-    # 👉 Renombramos dinámicamente las columnas
-    mapping = {
-        df.columns[0]:  "Ticket",
-        df.columns[1]:  "Unidad de Negocio",
-        df.columns[2]:  "Sociedad",
-        df.columns[3]:  "Área",
-        df.columns[4]:  "Fecha Solicitud",
-        df.columns[5]:  "Reporte",
-        df.columns[6]:  "Mes",
-        df.columns[7]:  "Prioridad",
-        df.columns[8]:  "Categoría",
-        df.columns[9]:  "Tipo",
-        df.columns[10]: "Solicitado Por",
-        df.columns[11]: "Tiempo Estimado",
-        df.columns[12]: "Fecha Inicio",
-        df.columns[13]: "Fecha Terminación",
-        df.columns[14]: "Mes Terminación",
-        df.columns[15]: "Ejecutado SLA",
-        df.columns[16]: "Tiempo Vs Solicitado",
-        df.columns[17]: "Días desde Solicitud",
-        df.columns[18]: "Estado",
-        df.columns[19]: "Ejecutor",
-        df.columns[20]: "Presupuesto",
-        df.columns[21]: "Materiales",
-        df.columns[22]: "Link de Soporte",
-        df.columns[23]: "Foto"
-    }
+    # Renombrado dinámico solo hasta donde existan columnas
+    nuevos = [
+        "Ticket", "Unidad de Negocio", "Sociedad", "Área", "Fecha Solicitud",
+        "Reporte", "Mes", "Prioridad", "Categoría", "Tipo",
+        "Solicitado Por", "Tiempo Estimado", "Fecha Inicio",
+        "Fecha Terminación", "Mes Terminación", "Ejecutado SLA",
+        "Tiempo Vs Solicitado", "Días desde Solicitud", "Estado",
+        "Ejecutor", "Presupuesto", "Materiales", "Link de Soporte", "Foto"
+    ]
+    n = min(len(df.columns), len(nuevos))
+    mapping = {df.columns[i]: nuevos[i] for i in range(n)}
     df = df.rename(columns=mapping)
 
-    # 👉 Ocultar columna 0 (Ticket)
-    df = df.iloc[:, 1:]
+    # Usar Ticket como índice (si no existe, usar la primera columna como índice y llamarla Ticket)
+    if "Ticket" in df.columns:
+        df = df.set_index("Ticket")
+    else:
+        first_col = df.columns[0]
+        df = df.set_index(first_col)
+        df.index.name = "Ticket"
+
     return df
 
 try:
     df = cargar_csv(CSV_URL)
     st.success(f"✅ Cargado: {len(df)} filas × {len(df.columns)} columnas")
-    st.dataframe(df, use_container_width=True, height=600)
     st.caption(f"Última actualización: {datetime.now():%Y-%m-%d %H:%M:%S}")
 
     # -------------------------------
-    # 🔎 Búsqueda rápida
+    # 🔎 Búsqueda rápida (incluye índice Ticket)
     # -------------------------------
     st.subheader("🔎 Buscar")
-    col = st.selectbox("Columna", ["(todas)"] + list(df.columns))
+    opciones_cols = ["(todas)", "Ticket (índice)"] + list(df.columns)
+    col = st.selectbox("Columna", opciones_cols)
     q = st.text_input("Texto contiene:", "")
+
     view = df
     if q:
+        q_norm = str(q)
         if col == "(todas)":
-            mask = False
+            # Busca en todas las columnas + índice
+            mask_cols = False
             for c in df.columns:
-                mask = mask | df[c].astype(str).str.contains(q, case=False, na=False)
-            view = df[mask]
+                mask_cols = mask_cols | df[c].astype(str).str.contains(q_norm, case=False, na=False)
+            mask_index = df.index.astype(str).str.contains(q_norm, case=False, na=False)
+            view = df[mask_cols | mask_index]
+        elif col == "Ticket (índice)":
+            view = df[df.index.astype(str).str.contains(q_norm, case=False, na=False)]
         else:
-            view = df[df[col].astype(str).str.contains(q, case=False, na=False)]
+            view = df[df[col].astype(str).str.contains(q_norm, case=False, na=False)]
+
         st.info(f"Coincidencias: {len(view)}")
 
-    st.dataframe(view, use_container_width=True, height=400)
+    # Tabla principal
+    st.dataframe(view, use_container_width=True, height=600)
 
     # -------------------------------
-    # ⬇️ Descargar CSV filtrado
+    # ⬇️ Descargar CSV filtrado (con Ticket como columna)
     # -------------------------------
-    st.download_button("⬇️ Descargar CSV filtrado",
-                       data=view.to_csv(index=False).encode("utf-8-sig"),
-                       file_name="tickets_filtrados.csv",
-                       mime="text/csv")
+    st.download_button(
+        "⬇️ Descargar CSV filtrado",
+        data=view.reset_index().to_csv(index=False).encode("utf-8-sig"),
+        file_name="tickets_filtrados.csv",
+        mime="text/csv"
+    )
 
     # -------------------------------
     # 🔄 Botón para refrescar manualmente
@@ -89,5 +94,4 @@ try:
 
 except Exception as e:
     st.error(f"❌ No se pudo cargar el CSV: {e}")
-    st.info("Verifica que el archivo tickets.csv exista en GitHub.")
-
+    st.info("Verifica la URL RAW en GitHub y el formato del archivo.")
