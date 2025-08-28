@@ -1,3 +1,4 @@
+import re
 import streamlit as st
 import pandas as pd
 from datetime import datetime
@@ -8,43 +9,67 @@ st.title("🎫 Visualizador de Tickets")
 # URL RAW del CSV en GitHub
 CSV_URL = "https://raw.githubusercontent.com/facility-coder/tickets-visualizer/main/data/tickets.csv"
 
+def _parse_money_series(s: pd.Series) -> pd.Series:
+    """
+    Convierte strings de dinero a float manejando formatos:
+    - "B/. 1,234.56"  -> 1234.56
+    - "1.234,56"      -> 1234.56
+    - "1,234"         -> 1234.00
+    - valores vacíos  -> NaN
+    """
+    s = s.astype(str).str.replace(r"[^\d\.,\-]", "", regex=True).str.strip()
+
+    def _to_float(x: str):
+        if not x or x.lower() in {"nan", "none"}:
+            return None
+        # ambos separadores
+        if "," in x and "." in x:
+            # si la última coma está a la derecha del último punto -> coma decimal (formato europeo)
+            if x.rfind(",") > x.rfind("."):
+                x = x.replace(".", "").replace(",", ".")
+            else:
+                # formato en-US: coma miles, punto decimal
+                x = x.replace(",", "")
+        else:
+            # solo comas
+            if "," in x and "." not in x:
+                # asumimos coma decimal
+                x = x.replace(",", ".")
+            else:
+                # solo puntos o ninguno -> quitar separador de miles si hubiese comas
+                x = x.replace(",", "")
+        try:
+            return float(x)
+        except Exception:
+            return None
+
+    return s.apply(_to_float)
+
 @st.cache_data(ttl=60)
 def cargar_csv(url):
     # 👇 Saltamos las 3 primeras filas
-    df = pd.read_csv(url, dtype=str, encoding="utf-8", skiprows=4)
+    df = pd.read_csv(url, dtype=str, encoding="utf-8", skiprows=3, on_bad_lines="skip")
     df.columns = [str(c).strip() for c in df.columns]
 
-    # 👉 Renombramos dinámicamente las columnas
-    mapping = {
-        df.columns[1]:  "Ticket",
-        df.columns[2]:  "Unidad de Negocio",
-        df.columns[3]:  "Sociedad",
-        df.columns[4]:  "Área",
-        df.columns[5]:  "Fecha Solicitud",
-        df.columns[6]:  "Reporte",
-        df.columns[7]:  "Mes",
-        df.columns[8]:  "Prioridad",
-        df.columns[9]:  "Categoría",
-        df.columns[10]:  "Tipo",
-        df.columns[11]: "Solicitado Por",
-        df.columns[12]: "Tiempo Estimado",
-        df.columns[13]: "Fecha Inicio",
-        df.columns[14]: "Fecha Terminación",
-        df.columns[15]: "Mes Terminación",
-        df.columns[16]: "Ejecutado SLA",
-        df.columns[17]: "Tiempo Vs Solicitado",
-        df.columns[18]: "Días desde Solicitud",
-        df.columns[19]: "Tiempo Terminado Vs solicitado2",
-        df.columns[20]: "Estado",
-        df.columns[21]: "Ejecutor",
-        df.columns[22]: "Presupuesto",
-        df.columns[23]: "Materiales",
-        df.columns[24]: "Link de Soporte",
-        df.columns[25]: "Foto"
-    }
+    # 👉 Renombramos dinámicamente las columnas (primeras 24 si existen)
+    nuevos = [
+        "Ticket", "Unidad de Negocio", "Sociedad", "Área", "Fecha Solicitud",
+        "Reporte", "Mes", "Prioridad", "Categoría", "Tipo",
+        "Solicitado Por", "Tiempo Estimado", "Fecha Inicio",
+        "Fecha Terminación", "Mes Terminación", "Ejecutado SLA",
+        "Tiempo Vs Solicitado", "Días desde Solicitud", "Estado",
+        "Ejecutor", "Presupuesto", "Materiales", "Link de Soporte", "Foto"
+    ]
+    n = min(len(df.columns), len(nuevos))
+    mapping = {df.columns[i]: nuevos[i] for i in range(n)}
     df = df.rename(columns=mapping)
 
-    # ✅ Dejamos Ticket visible (no lo ocultamos)
+    # ✅ Dejar Ticket visible (no ocultamos)
+
+    # 🔁 Parsear Presupuesto a número (si existe)
+    if "Presupuesto" in df.columns:
+        df["Presupuesto"] = _parse_money_series(df["Presupuesto"])
+
     return df
 
 try:
@@ -52,11 +77,25 @@ try:
     st.success(f"✅ Cargado: {len(df)} filas × {len(df.columns)} columnas")
     st.caption(f"Última actualización: {datetime.now():%Y-%m-%d %H:%M:%S}")
 
-    # ----- Tabla completa con índice empezando en 1 -----
+    # ----- Tabla completa con índice que empieza en 1 -----
     df_display = df.copy()
     df_display.index = range(1, len(df_display) + 1)
     df_display.index.name = "N°"
-    st.dataframe(df_display, use_container_width=True, height=600)
+
+    # Configuración de columnas (formato Balboa para Presupuesto)
+    col_config = {}
+    if "Presupuesto" in df_display.columns:
+        col_config["Presupuesto"] = st.column_config.NumberColumn(
+            "Presupuesto (B/.)",
+            format="B/. %,.2f"
+        )
+
+    st.dataframe(
+        df_display,
+        use_container_width=True,
+        height=600,
+        column_config=col_config
+    )
 
     # -------------------------------
     # 🔎 Búsqueda rápida
@@ -76,19 +115,34 @@ try:
             view = df[df[col].astype(str).str.contains(q, case=False, na=False)]
         st.info(f"Coincidencias: {len(view)}")
 
-    # ----- Tabla filtrada con índice empezando en 1 -----
+    # ----- Tabla filtrada con índice que empieza en 1 -----
     view_display = view.copy()
     view_display.index = range(1, len(view_display) + 1)
     view_display.index.name = "N°"
-    st.dataframe(view_display, use_container_width=True, height=400)
+
+    col_config_view = {}
+    if "Presupuesto" in view_display.columns:
+        col_config_view["Presupuesto"] = st.column_config.NumberColumn(
+            "Presupuesto (B/.)",
+            format="B/. %,.2f"
+        )
+
+    st.dataframe(
+        view_display,
+        use_container_width=True,
+        height=400,
+        column_config=col_config_view
+    )
 
     # -------------------------------
     # ⬇️ Descargar CSV filtrado (sin índice)
     # -------------------------------
-    st.download_button("⬇️ Descargar CSV filtrado",
-                       data=view.to_csv(index=False).encode("utf-8-sig"),
-                       file_name="tickets_filtrados.csv",
-                       mime="text/csv")
+    st.download_button(
+        "⬇️ Descargar CSV filtrado",
+        data=view.to_csv(index=False).encode("utf-8-sig"),
+        file_name="tickets_filtrados.csv",
+        mime="text/csv"
+    )
 
     # -------------------------------
     # 🔄 Botón para refrescar manualmente
