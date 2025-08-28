@@ -34,12 +34,13 @@ def cargar_csv(url):
         df.columns[16]: "Ejecutado SLA",
         df.columns[17]: "Tiempo Vs Solicitado",
         df.columns[18]: "Días desde Solicitud",
-        df.columns[19]: "Estado",
-        df.columns[20]: "Ejecutor",
-        df.columns[21]: "Presupuesto",
-        df.columns[22]: "Materiales",
-        df.columns[23]: "Link de Soporte",
-        df.columns[24]: "Foto"
+        df.columns[19]: "Tiempo Terminado Vs solicitado2",
+        df.columns[20]: "Estado",
+        df.columns[21]: "Ejecutor",
+        df.columns[22]: "Presupuesto",
+        df.columns[23]: "Materiales",
+        df.columns[24]: "Link de Soporte",
+        df.columns[25]: "Foto"
     }
     df = df.rename(columns=mapping)
 
@@ -94,6 +95,7 @@ try:
 except Exception as e:
     st.error(f"❌ No se pudo cargar el CSV: {e}")
     st.info("Verifica que el archivo tickets.csv exista en GitHub.")
+
 
 
 
