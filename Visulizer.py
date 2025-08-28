@@ -72,11 +72,26 @@ try:
 
         st.info(f"Coincidencias: {len(view)}")
 
-    # Tabla principal
-    st.dataframe(view, use_container_width=True, height=600)
+    # -------------------------------
+    # ➕ Agregar columna "N°" y mover "Estado" a la derecha
+    # -------------------------------
+    view_display = view.copy()
+
+    # N° con numeración de 1..N sobre el resultado filtrado
+    view_display.insert(0, "N°", range(1, len(view_display) + 1))
+
+    # Mover "Estado" a la última columna (si existe)
+    if "Estado" in view_display.columns:
+        cols = [c for c in view_display.columns if c != "Estado"] + ["Estado"]
+        view_display = view_display[cols]
 
     # -------------------------------
-    # ⬇️ Descargar CSV filtrado (con Ticket como columna)
+    # 📋 Tabla
+    # -------------------------------
+    st.dataframe(view_display, use_container_width=True, height=600)
+
+    # -------------------------------
+    # ⬇️ Descargar CSV filtrado (sin la columna N°; con Ticket como columna)
     # -------------------------------
     st.download_button(
         "⬇️ Descargar CSV filtrado",
