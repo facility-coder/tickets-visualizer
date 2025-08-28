@@ -16,43 +16,46 @@ def cargar_csv(url):
 
     # 👉 Renombramos dinámicamente las columnas
     mapping = {
-        df.columns[0]:  "Ticket",
-        df.columns[1]:  "Unidad de Negocio",
-        df.columns[2]:  "Sociedad",
-        df.columns[3]:  "Área",
-        df.columns[4]:  "Fecha Solicitud",
-        df.columns[5]:  "Reporte",
-        df.columns[6]:  "Mes",
-        df.columns[7]:  "Prioridad",
-        df.columns[8]:  "Categoría",
-        df.columns[9]:  "Tipo",
-        df.columns[10]: "Solicitado Por",
-        df.columns[11]: "Tiempo Estimado",
-        df.columns[12]: "Fecha Inicio",
-        df.columns[13]: "Fecha Terminación",
-        df.columns[14]: "Mes Terminación",
-        df.columns[15]: "Ejecutado SLA",
-        df.columns[16]: "Tiempo Vs Solicitado",
-        df.columns[17]: "Días desde Solicitud",
-        df.columns[18]: "Estado",
-        df.columns[19]: "Ejecutor",
-        df.columns[20]: "Presupuesto",
-        df.columns[21]: "Materiales",
-        df.columns[22]: "Link de Soporte",
-        df.columns[23]: "Foto"
+        df.columns[1]:  "Ticket",
+        df.columns[2]:  "Unidad de Negocio",
+        df.columns[3]:  "Sociedad",
+        df.columns[4]:  "Área",
+        df.columns[5]:  "Fecha Solicitud",
+        df.columns[6]:  "Reporte",
+        df.columns[7]:  "Mes",
+        df.columns[8]:  "Prioridad",
+        df.columns[9]:  "Categoría",
+        df.columns[10]:  "Tipo",
+        df.columns[11]: "Solicitado Por",
+        df.columns[12]: "Tiempo Estimado",
+        df.columns[13]: "Fecha Inicio",
+        df.columns[14]: "Fecha Terminación",
+        df.columns[15]: "Mes Terminación",
+        df.columns[16]: "Ejecutado SLA",
+        df.columns[17]: "Tiempo Vs Solicitado",
+        df.columns[18]: "Días desde Solicitud",
+        df.columns[19]: "Estado",
+        df.columns[20]: "Ejecutor",
+        df.columns[21]: "Presupuesto",
+        df.columns[22]: "Materiales",
+        df.columns[23]: "Link de Soporte",
+        df.columns[24]: "Foto"
     }
     df = df.rename(columns=mapping)
 
-    # ✅ Ticket queda visible (NO lo ocultamos)
-    # df = df.iloc[:, 1:]  # <--- eliminado
-
+    # ✅ Dejamos Ticket visible (no lo ocultamos)
     return df
 
 try:
     df = cargar_csv(CSV_URL)
     st.success(f"✅ Cargado: {len(df)} filas × {len(df.columns)} columnas")
-    st.dataframe(df, use_container_width=True, height=600)
     st.caption(f"Última actualización: {datetime.now():%Y-%m-%d %H:%M:%S}")
+
+    # ----- Tabla completa con índice empezando en 1 -----
+    df_display = df.copy()
+    df_display.index = range(1, len(df_display) + 1)
+    df_display.index.name = "N°"
+    st.dataframe(df_display, use_container_width=True, height=600)
 
     # -------------------------------
     # 🔎 Búsqueda rápida
@@ -60,6 +63,7 @@ try:
     st.subheader("🔎 Buscar")
     col = st.selectbox("Columna", ["(todas)"] + list(df.columns))
     q = st.text_input("Texto contiene:", "")
+
     view = df
     if q:
         if col == "(todas)":
@@ -71,10 +75,14 @@ try:
             view = df[df[col].astype(str).str.contains(q, case=False, na=False)]
         st.info(f"Coincidencias: {len(view)}")
 
-    st.dataframe(view, use_container_width=True, height=400)
+    # ----- Tabla filtrada con índice empezando en 1 -----
+    view_display = view.copy()
+    view_display.index = range(1, len(view_display) + 1)
+    view_display.index.name = "N°"
+    st.dataframe(view_display, use_container_width=True, height=400)
 
     # -------------------------------
-    # ⬇️ Descargar CSV filtrado
+    # ⬇️ Descargar CSV filtrado (sin índice)
     # -------------------------------
     st.download_button("⬇️ Descargar CSV filtrado",
                        data=view.to_csv(index=False).encode("utf-8-sig"),
