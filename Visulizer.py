@@ -43,8 +43,9 @@ def cargar_csv(url):
     }
     df = df.rename(columns=mapping)
 
-    # 👉 Ocultar columna 0 (Ticket)
-    df = df.iloc[:, 1:]
+    # ✅ Ticket queda visible (NO lo ocultamos)
+    # df = df.iloc[:, 1:]  # <--- eliminado
+
     return df
 
 try:
