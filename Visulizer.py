@@ -46,6 +46,10 @@ def cargar_csv(url):
     # 👉 Usamos Ticket como índice fijo
     df = df.set_index("Ticket")
     return df
+    # 👉 Ocultar columna 0 (Ticket)
+    df = df.iloc[:, 1:]
+    return df
+
 
 try:
     df = cargar_csv(CSV_URL)
@@ -90,5 +94,6 @@ try:
 except Exception as e:
     st.error(f"❌ No se pudo cargar el CSV: {e}")
     st.info("Verifica que el archivo tickets.csv exista en GitHub.")
+
 
 
